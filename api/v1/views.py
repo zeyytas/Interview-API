@@ -104,6 +104,8 @@ class InterviewViewSet(viewsets.ModelViewSet):
 
         if not slot:
             return Response({'detail': 'Slot information is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if int(slot) < 9 or int(slot) > 18:
+            return Response({'detail': 'Slot must be between 9-18'}, status=status.HTTP_400_BAD_REQUEST)
 
         if interviewer_email:
             interview, error = self.if_interviewer(interviewer_email, slot)
