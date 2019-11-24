@@ -1,15 +1,46 @@
 
+import django_filters
 from rest_framework import viewsets, status
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
 from api.v1.serializers import InterviewSerializer
 from interviewapp.models import Interview, Interviewer, Candidate
 
 
+class CustomPagination(PageNumberPagination):
+    page_size_query_param = 'per_page'
+
+
+class CustomFilter(django_filters.FilterSet):
+
+    @property
+    def qs(self):
+        queryset = self.queryset.filter(is_scheduled=True)
+
+        candidate_email = self.request.GET.get('candidate_email')
+        interviewer_email = self.request.GET.get('interviewer_email')
+
+        if candidate_email:
+            queryset = queryset.filter(candidate__email=candidate_email)
+
+        if interviewer_email:
+            interviewer_emails = interviewer_email.split(',')
+            queryset = queryset.filter(interviewer__email__in=interviewer_emails)
+
+        return queryset
+
+    class Meta:
+        model = Interview
+        fields = '__all__'
+
+
 class InterviewViewSet(viewsets.ModelViewSet):
     model = Interview
     serializer_class = InterviewSerializer
     queryset = Interview.objects.all()
+    pagination_class = CustomPagination
+    filterset_class = CustomFilter
 
     @staticmethod
     def if_candidate(candidate_email, slot=None, pk=None):
@@ -102,3 +133,4 @@ class InterviewViewSet(viewsets.ModelViewSet):
             interview, error = self.if_candidate(candidate_email, pk=kwargs.get('pk'))
             if error:
                 return Response({'detail': error}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(interview, status=status.HTTP_200_OK)
