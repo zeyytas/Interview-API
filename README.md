@@ -26,7 +26,7 @@ docker-compose up
 ``` python manage.py test interviewapp.tests.InterviewTests ```
 
 
-## REQUEST
+## Requests
 
 <small>
 
