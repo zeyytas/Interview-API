@@ -40,10 +40,6 @@ PUT         /api/{api-version}/interview/:id/ </small> </br>
 
 <small>
    
-   - Interview id
-
-    ```e.g.   ?id=20```
-   
    - Slot </br>
    Since working hours generally between 9am to 6pm, time slot choices are available between 9 to 18.
 
