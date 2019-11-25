@@ -21,6 +21,10 @@ docker-compose build
 ```
 docker-compose up
 ```
+## Tests 
+
+``` python manage.py test interviewapp.tests.InterviewTests ```
+
 
 ## REQUEST
 
