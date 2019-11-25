@@ -22,10 +22,11 @@ class InterviewTests(APITestCase):
             self.fail('Creation of Interview object failed.')
 
         emails = 'interviewer2@gmail.com,interviewer3@gmail.com'
-        self.client.post(self.url, {'interviewer_email': emails, 'slot': 11}, format='json')
+        self.client.post(self.url, {'interviewer_email': emails, 'slot': 14}, format='json')
 
         try:
-            Interviewer.objects.filter(email__in=['interviewer@gmail.com', 'interviewer2@gmail.com'])
+            Interviewer.objects.filter(email='interviewer@gmail.com')
+            Interviewer.objects.filter(email='interviewer2@gmail.com')
         except ObjectDoesNotExist:
             self.fail('Creation of Interview objects failed.')
 
@@ -42,13 +43,12 @@ class InterviewTests(APITestCase):
 
         email = 'interviewer4@gmail.com,interviewer5@gmail.com'
         emails = email.split(',')
-
-        response = self.client.post(self.url, {'interviewer_email': email, 'slot': 13}, format='json')
+        slot = 13
+        response = self.client.post(self.url, {'interviewer_email': email, 'slot': slot}, format='json')
 
         try:
             interviewers = Interviewer.objects.filter(email__in=emails)
-            interview = Interview.objects.filter(interviewer__in=interviewers).distinct().get()
-            import ipdb;ipdb.set_trace()
+            interview = Interview.objects.filter(slot=slot, interviewer__in=interviewers).distinct().get()
             serialized_obj = InterviewSerializer(interview)
 
             self.assertDictEqual(response.data, serialized_obj.data)
@@ -76,30 +76,33 @@ class InterviewTests(APITestCase):
         email = 'interviewer6@gmail.com'
         self.client.put(reverse('interview-detail', args=[interview.id]), {'interviewer_email': email}, format='json')
 
-        interviewer = Interviewer.objects.get(email=email)
-        interview = Interview.objects.get(id=interview.id)
+        try:
+            interviewer = Interviewer.objects.get(email=email)
+            interview = Interview.objects.get(id=interview.id)
 
-        self.assertEqual(interview.is_scheduled, True)
-        self.assertEqual(interviewer, interview.interviewer.get())
+            self.assertEqual(interview.is_scheduled, True)
+            self.assertEqual(interviewer, interview.interviewer.get())
+
+        except ObjectDoesNotExist:
+            self.fail('Creation of Interviewer object failed.')
 
     def test_update_interview_by_candidate(self):
         interviewer = Interviewer.objects.create(email='interviewer7@gmail.com')
         interview = Interview.objects.create(slot=15)
         interview.interviewer.set([interviewer])
-        interview_id = interview.id
 
         email = 'candidate4@gmail.com'
-        self.client.put(reverse('interview-detail', args=[interview_id]), {'candidate_email': email}, format='json')
+        self.client.put(reverse('interview-detail', args=[interview.id]), {'candidate_email': email}, format='json')
 
         try:
             candidate = Candidate.objects.get(email=email)
-            interview = Interview.objects.get(id=interview_id)
+            interview = Interview.objects.get(id=interview.id)
 
             self.assertEqual(interview.is_scheduled, True)
             self.assertEqual(candidate, interview.candidate)
 
         except ObjectDoesNotExist:
-            self.fail('Update of Interview object failed.')
+            self.fail('Creation of Candidate object failed.')
 
     def test_get_interview_by_candidate(self):
 

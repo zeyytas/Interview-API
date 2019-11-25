@@ -43,9 +43,15 @@ class InterviewViewSet(viewsets.ModelViewSet):
     filterset_class = CustomFilter
 
     @staticmethod
-    def if_candidate(candidate_email, slot=None, pk=None):
-        if Interview.objects.filter(slot=slot, candidate__email=candidate_email):
-            return '', 'Candidate already has an interview at given time slot.'
+    def check_is_scheduled(interview):
+        if interview.candidate and interview.interviewer:
+            interview.is_scheduled = True
+            interview.save()
+
+    def if_candidate(self, candidate_email, slot=None, pk=None):
+        if slot:
+            if Interview.objects.filter(slot=slot, candidate__email=candidate_email):
+                return '', 'Candidate already has an interview at given time slot.'
 
         try:
             candidate, _ = Candidate.objects.get_or_create(email=candidate_email)
@@ -55,9 +61,7 @@ class InterviewViewSet(viewsets.ModelViewSet):
                 interview.candidate = candidate
                 interview.save()
 
-                if interview.candidate and interview.interviewer:
-                    interview.is_scheduled = True
-                    interview.save()
+                self.check_is_scheduled(interview)
 
             else:
                 interview, _ = Interview.objects.get_or_create(slot=slot, candidate=candidate)
@@ -67,8 +71,7 @@ class InterviewViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return '', str(e)
 
-    @staticmethod
-    def if_interviewer(interviewer_email, slot=None, pk=None):
+    def if_interviewer(self, interviewer_email, slot=None, pk=None):
         interviewer_emails = interviewer_email.split(',')
         if slot:
             if Interview.objects.filter(slot=slot, interviewer__email__in=interviewer_emails):
@@ -84,9 +87,7 @@ class InterviewViewSet(viewsets.ModelViewSet):
                 interview = Interview.objects.get(id=pk)
                 interview.interviewer.set(interviewer_list)
 
-                if interview.candidate and interview.interviewer:
-                    interview.is_scheduled = True
-                    interview.save()
+                self.check_is_scheduled(interview)
 
             else:
                 interview = Interview.objects.create(slot=slot)
